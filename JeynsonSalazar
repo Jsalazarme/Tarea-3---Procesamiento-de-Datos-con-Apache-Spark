@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+"""
+kafka_producer.py
+Productor simple que envía JSONs simulados al topic 'sensor_data'
+Requisitos: pip install kafka-python
+"""
+
+import time
+import json
+import random
+from kafka import KafkaProducer
+
+def generate_sensor_data():
+    return {
+        "sensor_id": random.randint(1, 5),
+        "temperature": round(random.uniform(18.0, 30.0), 2),
+        "humidity": round(random.uniform(30.0, 80.0), 2),
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S")  # ISO-like string
+    }
+
+def main():
+    producer = KafkaProducer(
+        bootstrap_servers=['localhost:9092'],
+        value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+        retries=5
+    )
+
+    try:
+        print("Producing messages to topic 'sensor_data' (Ctrl-C para detener)...")
+        while True:
+            data = generate_sensor_data()
+            producer.send('sensor_data', value=data)
+            print("Sent:", data)
+            time.sleep(1)  # 1 mensaje por segundo (ajusta según necesites)
+    except KeyboardInterrupt:
+        print("Detenido por usuario.")
+    finally:
+        producer.flush()
+        producer.close()
+
+if __name__ == "__main__":
+    main()
